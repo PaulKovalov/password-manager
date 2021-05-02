@@ -1,4 +1,5 @@
 #include "aes.hpp"
+#include "hasher.hpp"
 
 string AES::uc_to_hex(unsigned char* data, int length) {
     stringstream ss;
@@ -21,6 +22,7 @@ pair<unsigned char*, int> AES::hex_to_uc(string data) {
 }
 
 string AES::aes_encode(string message, string key) {
+    key = Hasher::hash_sha1(key);
     int input_length = message.size(), key_length = key.length();
     int encoded_msg_length = ((input_length / AES_BLOCK_SIZE) + 1) * AES_BLOCK_SIZE;
 
@@ -42,6 +44,7 @@ string AES::aes_encode(string message, string key) {
 }
 
 string AES::aes_decode(string message, string key) {
+    key = Hasher::hash_sha1(key);
     pair<unsigned char*, int> input_message_pair = hex_to_uc(message);
     int input_length = input_message_pair.second;
 

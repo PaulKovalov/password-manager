@@ -42,6 +42,19 @@ bool has_access(string username, string password) {
     }
 }
 
+string ask_password(string prompt) {
+    string password;
+    set_std_echo(false);
+    cout << endl << prompt;
+    cin >> password;
+    set_std_echo(true);
+    return password;
+}
+
+string get_storage_path(string user) {
+    return Env::get_home_dir() + "/.pm/" + Hasher::hash_sha256(user + "_storage") + ".pst";
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         cout << "Usage: pm <command> <args>" << endl;
@@ -53,27 +66,18 @@ int main(int argc, char* argv[]) {
         // -a stands for "add" a site
         // disable echoing to console
         string site, password, confirm_password, storage_password;
-        set_std_echo(false);
-        cout << "storage password: ";
-        cin >> storage_password;
-        set_std_echo(true);
+        storage_password = ask_password("storage password: ");
         string username = Env::get_user();
         if (has_access(username, storage_password)) {
             cout << endl << "site: ";
             cin >> site;
-            set_std_echo(false);
-            cout << "password: ";
-            cin >> password;
-            cout << endl << "confirm password: ";
-            cin >> confirm_password;
-            set_std_echo(true);
+            password = ask_password("password: ");
+            confirm_password = ask_password("confirm password: ");
             if (password == confirm_password) {
-                fs::path storage_path = Env::get_home_dir() + "/.pm/" + Hasher::hash_sha256(username + "_storage") + ".pst";
                 // open file in append mode
-                ofstream of(storage_path, ios_base::app);
-                string key = Hasher::hash_sha1(storage_password);
+                ofstream of(get_storage_path(username), ios_base::app);
                 AES aes;
-                of << aes.aes_encode(site, key) << endl << aes.aes_encode(password, key) << endl;
+                of << aes.aes_encode(site, storage_password) << endl << aes.aes_encode(password, storage_password) << endl;
                 of.close();
                 cout << endl << "done" << endl;
             } else {
@@ -84,17 +88,14 @@ int main(int argc, char* argv[]) {
             cout << "access denied" << endl;
             return 0;
         }
-
     } else if (command == "-r") {
         // -r stands for "read" a site
+        string storage_password = ask_password("storage password: ");
+        string username = Env::get_user();
     } else if (command == "-i") {
         // storage initialization
-        set_std_echo(false);
-        string password, username;
-        cout << "storage password: ";
-        cin >> password;
-        set_std_echo(true);
-        username = Env::get_user();
+        string storage_password = ask_password("storage password: ");
+        string username = Env::get_user();
         // create a file for passwords
         fs::path root_dir = Env::get_home_dir() + "/.pm";
         if (!fs::exists(root_dir)) {
@@ -104,7 +105,7 @@ int main(int argc, char* argv[]) {
             
             if (!fs::exists(full_path)) {
                 ofstream of(full_path);
-                of << Hasher::hash_sha256(password) << endl;
+                of << Hasher::hash_sha256(storage_password) << endl;
                 cout << endl << "storage initialized for user " << username << endl;
                 return 0;
             } else {
@@ -113,7 +114,7 @@ int main(int argc, char* argv[]) {
                 string overwrite;
                 cin >> overwrite;
                 if (overwrite == "y") {
-                    of << Hasher::hash_sha256(password) << endl;
+                    of << Hasher::hash_sha256(storage_password) << endl;
                 } else {
                     cout << "aborting" << endl;
                     return 0;
