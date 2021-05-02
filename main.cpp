@@ -25,11 +25,13 @@ void set_std_echo(bool enable) {
     tcsetattr(STDIN_FILENO, TCSANOW, &tty);
 }
 
+string get_storage_path(string user) {
+    return Env::get_home_dir() + "/.pm/" + Hasher::hash_sha256(user + "_storage") + ".pst";
+}
+
 bool has_access(string username, string password) {
-    // get the storage file
-    fs::path storage_path = Env::get_home_dir() + "/.pm/" + Hasher::hash_sha256(username + "_storage") + ".pst";
     // read hashed password written to the storage and check if user can access it
-    ifstream fin(storage_path);
+    ifstream fin(get_storage_path(username));
     if (fin.is_open()) {
         string hashed_pwd;
         fin >> hashed_pwd;
@@ -45,14 +47,10 @@ bool has_access(string username, string password) {
 string ask_password(string prompt) {
     string password;
     set_std_echo(false);
-    cout << endl << prompt;
+    cout << prompt;
     cin >> password;
     set_std_echo(true);
     return password;
-}
-
-string get_storage_path(string user) {
-    return Env::get_home_dir() + "/.pm/" + Hasher::hash_sha256(user + "_storage") + ".pst";
 }
 
 int main(int argc, char* argv[]) {
@@ -64,15 +62,14 @@ int main(int argc, char* argv[]) {
     
     if (command == "-a") {
         // -a stands for "add" a site
-        // disable echoing to console
-        string site, password, confirm_password, storage_password;
-        storage_password = ask_password("storage password: ");
+        string storage_password = ask_password("storage password: ");
         string username = Env::get_user();
         if (has_access(username, storage_password)) {
+            string site;
             cout << endl << "site: ";
             cin >> site;
-            password = ask_password("password: ");
-            confirm_password = ask_password("confirm password: ");
+            string password = ask_password("password: ");
+            string confirm_password = ask_password("\nconfirm password: ");
             if (password == confirm_password) {
                 // open file in append mode
                 ofstream of(get_storage_path(username), ios_base::app);
@@ -92,6 +89,39 @@ int main(int argc, char* argv[]) {
         // -r stands for "read" a site
         string storage_password = ask_password("storage password: ");
         string username = Env::get_user();
+        if (has_access(username, storage_password)) {
+            string site;
+            // if site was provided as a third argument, use it, otherwise ask
+            if (argc == 3) {
+                site = string(argv[2]);
+            } else {
+                cout << endl << "site: ";
+                cin >> site;
+            }
+            // encode site's name in order to find it in the file
+            AES aes;
+            site = aes.aes_encode(site, storage_password);
+            ifstream fin(get_storage_path(username));
+            if (fin.is_open()) {
+                string line;
+                fin >> line; // skip first line with hashed password;
+                while (getline(fin, line)) {
+                    if (line == site) {
+                        // found site, read password
+                        getline(fin, line);
+                        cout << endl << aes.aes_decode(line, storage_password) << endl;
+                        fin.close();
+                        return 0;
+                    }
+                }
+                fin.close();
+                cout << endl << "couldn't find password" << endl;
+            } else {
+                cout << endl << "failed to open storage file" << endl;
+                fin.close();
+                return 0;
+            }
+        }
     } else if (command == "-i") {
         // storage initialization
         string storage_password = ask_password("storage password: ");
@@ -102,7 +132,6 @@ int main(int argc, char* argv[]) {
             fs::create_directory(root_dir);
             fs::path filename =  Hasher::hash_sha256(username + "_storage") + ".pst";
             fs::path full_path = root_dir / filename;
-            
             if (!fs::exists(full_path)) {
                 ofstream of(full_path);
                 of << Hasher::hash_sha256(storage_password) << endl;
