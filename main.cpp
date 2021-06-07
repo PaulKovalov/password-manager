@@ -121,6 +121,9 @@ int main(int argc, char* argv[]) {
                 fin.close();
                 return 0;
             }
+        } else {
+            cout << "access denied" << endl;
+            return 0;
         }
     } else if (command == "-i") {
         // storage initialization
@@ -153,9 +156,14 @@ int main(int argc, char* argv[]) {
             cout << "couldn't find a free directory to use as a storage, aborting" << endl;
             return 0;
         }
-        
+    } else if (command == "-d") {
+        // delete word from storage
+        string storage_password = ask_password("storage password: ");
+        string username = Env::get_user();
     } else if (command == "-h") {
         // display help
+    } else if (command == "-rs") {
+        // remove storage
     }
     return 0;
 }
