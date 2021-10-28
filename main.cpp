@@ -1,14 +1,15 @@
-#include <iostream>
+#include <pwd.h>
 #include <termios.h>
 #include <unistd.h>
-#include <pwd.h>
+
+#include <cstring>
 #include <filesystem>
 #include <fstream>
-#include <cstring>
+#include <iostream>
 
 #include "aes.hpp"
-#include "hasher.hpp"
 #include "env.hpp"
+#include "hasher.hpp"
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -17,7 +18,7 @@ void set_std_echo(bool enable) {
     // works only with linux
     struct termios tty;
     tcgetattr(STDIN_FILENO, &tty);
-    if(!enable) {
+    if (!enable) {
         tty.c_lflag &= ~ECHO;
     } else {
         tty.c_lflag |= ECHO;
@@ -59,14 +60,15 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     string command = string(argv[1]);
-    
+
     if (command == "-a") {
         // -a stands for "add" a site
         string storage_password = ask_password("storage password: ");
         string username = Env::get_user();
         if (has_access(username, storage_password)) {
             string site;
-            cout << endl << "site: ";
+            cout << endl
+                 << "site: ";
             cin >> site;
             string password = ask_password("password: ");
             string confirm_password = ask_password("\nconfirm password: ");
@@ -74,9 +76,11 @@ int main(int argc, char* argv[]) {
                 // open file in append mode
                 ofstream of(get_storage_path(username), ios_base::app);
                 AES aes;
-                of << aes.aes_encode(site, storage_password) << endl << aes.aes_encode(password, storage_password) << endl;
+                of << aes.aes_encode(site, storage_password) << endl
+                   << aes.aes_encode(password, storage_password) << endl;
                 of.close();
-                cout << endl << "done" << endl;
+                cout << endl
+                     << "done" << endl;
             } else {
                 cout << "passwords don't match" << endl;
                 return 0;
@@ -95,7 +99,8 @@ int main(int argc, char* argv[]) {
             if (argc == 3) {
                 site = string(argv[2]);
             } else {
-                cout << endl << "site: ";
+                cout << endl
+                     << "site: ";
                 cin >> site;
             }
             // encode site's name in order to find it in the file
@@ -104,20 +109,23 @@ int main(int argc, char* argv[]) {
             ifstream fin(get_storage_path(username));
             if (fin.is_open()) {
                 string line;
-                fin >> line; // skip first line with hashed password;
+                fin >> line;  // skip first line with hashed password;
                 while (getline(fin, line)) {
                     if (line == site) {
                         // found site, read password
                         getline(fin, line);
-                        cout << endl << aes.aes_decode(line, storage_password) << endl;
+                        cout << endl
+                             << aes.aes_decode(line, storage_password) << endl;
                         fin.close();
                         return 0;
                     }
                 }
                 fin.close();
-                cout << endl << "couldn't find password" << endl;
+                cout << endl
+                     << "couldn't find password" << endl;
             } else {
-                cout << endl << "failed to open storage file" << endl;
+                cout << endl
+                     << "failed to open storage file" << endl;
                 fin.close();
                 return 0;
             }
@@ -132,29 +140,28 @@ int main(int argc, char* argv[]) {
         // create a file for passwords
         fs::path root_dir = Env::get_home_dir() + "/.pm";
         if (!fs::exists(root_dir)) {
+            cout << "creating directory for storages..." << endl;
             fs::create_directory(root_dir);
-            fs::path filename =  Hasher::hash_sha256(username + "_storage") + ".pst";
-            fs::path full_path = root_dir / filename;
-            if (!fs::exists(full_path)) {
-                ofstream of(full_path);
-                of << Hasher::hash_sha256(storage_password) << endl;
-                cout << endl << "storage initialized for user " << username << endl;
-                return 0;
-            } else {
-                ofstream of(full_path);
-                cout << "storage already exists, overwrite? (y/n): ";
-                string overwrite;
-                cin >> overwrite;
-                if (overwrite == "y") {
-                    of << Hasher::hash_sha256(storage_password) << endl;
-                } else {
-                    cout << "aborting" << endl;
-                    return 0;
-                }
-            }
-        } else {
-            cout << "couldn't find a free directory to use as a storage, aborting" << endl;
+        }
+        fs::path filename = Hasher::hash_sha256(username + "_storage") + ".pst";
+        fs::path full_path = root_dir / filename;
+        if (!fs::exists(full_path)) {
+            ofstream of(full_path);
+            of << Hasher::hash_sha256(storage_password) << endl;
+            cout << endl
+                 << "storage initialized for user " << username << endl;
             return 0;
+        } else {
+            ofstream of(full_path);
+            cout << "storage already exists, overwrite? (y/n): ";
+            string overwrite;
+            cin >> overwrite;
+            if (overwrite == "y") {
+                of << Hasher::hash_sha256(storage_password) << endl;
+            } else {
+                cout << "aborting" << endl;
+                return 0;
+            }
         }
     } else if (command == "-d") {
         // delete word from storage
