@@ -3,4 +3,5 @@ __pycache__/
 *.o
 pmanager
 bazel-*
+*.BUILD
 .pytest-cache/

@@ -19,3 +19,6 @@ serving as the encryption key.
 "python3 pm.py -d <optional: site name>  - delete password for the site from storage.
                                            This is irreversible operation
 "python3 pm.py -h"                       - print this help
+
+Command to run tests for python version:
+"docker-compose --file testing/docker-compose.yml up --build --renew-anon-volumes --exit-code-from pm_tests"
