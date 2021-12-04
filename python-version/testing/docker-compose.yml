@@ -1,0 +1,10 @@
+version: '3.0'
+services:
+  pm_tests:
+    build:
+      context: ../
+      dockerfile: ./testing/Dockerfile
+    environment:
+      # Sets custom home variable for testing purposes.
+      HOME: /home/Vasiliy
+      USER: Vasiliy

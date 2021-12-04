@@ -1,6 +1,6 @@
+__pycache__/
+.idea/
 *.o
 pmanager
-/bazel-*
-/python-version
-/.idea
-/shit
+bazel-*
+.pytest-cache/
