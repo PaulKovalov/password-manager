@@ -195,7 +195,7 @@ def delete_password(ctx):
                 storage_file.write(password_tuple[1])
         print('password deleted')
     else:
-        print('couldn\'t find password for the specified site')
+        print('could not find password for the specified site')
 
 
 def print_help():
