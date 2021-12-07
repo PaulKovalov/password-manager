@@ -1,4 +1,7 @@
 #!/bin/sh
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
 # First step is running unit tests defined in the python test file.
 python3 -m pytest
 

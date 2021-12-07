@@ -17,8 +17,8 @@ RUN pip install -r requirements.txt --ignore-installed
 
 COPY *.py ./
 COPY testing/*.py ./
-COPY testing/run_tests.sh ./
-RUN chmod +x run_tests.sh
+COPY testing/testing.sh ./
+RUN chmod +x testing.sh
 # Run next command as Vasiliy
 USER Vasiliy
-CMD ["/bin/sh", "run_tests.sh"]
+CMD ["/bin/sh", "testing.sh"]
