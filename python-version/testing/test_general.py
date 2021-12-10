@@ -46,7 +46,7 @@ def test_create_storage_for_user():
     assert file_exists, "Storage file was not created"
     with open(expected_file_path) as file:
         written_password = file.readline().rstrip()
-        assert written_password == '77aae185203edc6357676db95caa25d0f398d402c1723e6a7b42cfe8d2967f2e'
+        assert written_password == '17aae185203edc6357676db95caa25d0f398d402c1723e6a7b42cfe8d2967f2e'
 
 
 # ID: 3
