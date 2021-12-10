@@ -7,10 +7,10 @@ on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
     branches: [ master ]
-    paths: [ python-version/* ]
+    paths: [ python-version/** ]
   pull_request:
     branches: [ master ]
-    paths: [ python-version/* ]
+    paths: [ python-version/** ]
   schedule:
     - cron:  '0 14 * * *'
 
