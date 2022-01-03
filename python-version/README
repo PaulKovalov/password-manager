@@ -21,4 +21,4 @@ serving as the encryption key.
 "python3 pm.py -h"                       - print this help
 
 Command to run tests for python version:
-"docker-compose --file testing/docker-compose.yml up --build --renew-anon-volumes --exit-code-from pm_tests"
+"./run_tests.sh"
