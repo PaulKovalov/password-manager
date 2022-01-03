@@ -1,3 +1,4 @@
+#!/home/paul/.virtualenvs/python-version/bin/python
 import sys
 import getpass
 import os.path
@@ -5,10 +6,59 @@ import pyperclip
 import copy
 
 from pathlib import Path
-from hasher import Hasher
-from aes import AESCipher
+import base64
+from Crypto import Random
+from Crypto.Cipher import AES
+from hashlib import sha256, sha1
 
-# Context keys.
+
+# Provides static methods for generating cryptographic hashes of a string.
+class Hasher:
+    __default_encoding = 'utf-8'
+
+    # Returns SHA-256 hash in a HEX format.
+    @staticmethod
+    def sha256(_str) -> str:
+        return sha256(_str.encode(Hasher.__default_encoding)).hexdigest()
+
+    # Returns SHA-1 hash in a HEX format.
+    @staticmethod
+    def sha1(_str) -> str:
+        return sha1(_str.encode(Hasher.__default_encoding)).hexdigest()
+
+    # Returns SHA-256 hash in a format of bytes.
+    @staticmethod
+    def sha256_bytes(_str):
+        return sha256(_str.encode(Hasher.__default_encoding)).digest()
+
+
+# Provides two methods for encrypting and decrypting string.
+class AESCipher(object):
+
+    def __init__(self, key: str):
+        # Take SHA-256 hash of key, so that key is 32 bits long, which is perfect for AES.
+        self.key = Hasher.sha256_bytes(key)
+
+    def encrypt(self, raw):
+        raw = self._pad(raw)
+        iv = Random.new().read(AES.block_size)
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        return base64.b64encode(iv + cipher.encrypt(raw.encode())).decode('utf-8')
+
+    def decrypt(self, enc):
+        # Encoded string is base64 encoded, converted to human readable format.
+        enc = base64.b64decode(enc.encode('utf-8'))
+        iv = enc[:AES.block_size]
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        return self._unpad(cipher.decrypt(enc[AES.block_size:])).decode('utf-8')
+
+    # Aligns data.
+    def _pad(self, s):
+        return s + (AES.block_size - len(s) % AES.block_size) * chr(AES.block_size - len(s) % AES.block_size)
+
+    def _unpad(self, s):
+        return s[:-ord(s[len(s) - 1:])]
+
 
 # Operation to do.
 COMMAND = 'command'
@@ -68,7 +118,7 @@ def ensure_ctx(ctx, *args):
             newctx[USERNAME] = getpass.getuser()
         elif arg not in ctx:
             # All other missing information must be provided from the input.
-            newctx[arg] = input(f'{arg}: ')
+            newctx[arg] = getpass.getpass(f'{arg}: ')
     return newctx
 
 
@@ -88,25 +138,25 @@ def has_access(ctx):
     if Path(storage_path).exists() and Path(storage_path).is_file():
         with open(storage_path, 'r') as storage:
             written_storage_password = storage.readline().rstrip()
-            return written_storage_password == Hasher.sha256(storage_password)
+            return written_storage_password == Hasher.sha1(storage_password)
     else:
         print('no storage file found, aborting')
         return False
 
 
-# appends newline to the end of the given string
+# Appends newline to the end of the given string.
 def append_newline(s: str) -> str:
     return s + '\n'
 
 
-# creates and initializes storage file
+# Creates and initializes storage file.
 def create_storage_file(absolute_storage_path: str, storage_password: str):
     root_dir = os.path.dirname(absolute_storage_path)
     if not Path(root_dir).exists():
         Path(root_dir).mkdir()
     Path(absolute_storage_path).touch()
     with open(absolute_storage_path, 'a') as storage_file:
-        storage_file.write(append_newline(Hasher.sha256(storage_password)))
+        storage_file.write(append_newline(Hasher.sha1(storage_password)))
         print('done')
 
 
@@ -142,7 +192,7 @@ def add_password(ctx):
         storage_path = get_storage_path(username)
         with open(storage_path, 'a+') as storage_file:
             cipher = AESCipher(storage_password)
-            # both site name and site password are encrypted
+            # Both site name and site password are encrypted.
             storage_file.write(append_newline(cipher.encrypt(site)))
             storage_file.write(append_newline(cipher.encrypt(site_password)))
             print('done')
@@ -157,14 +207,14 @@ def read_password(ctx):
     cipher = AESCipher(storage_password)
     absolute_storage_path = get_storage_path(username)
     with open(absolute_storage_path, 'r') as storage_file:
-        # skip the first line with storage password
+        # Skip the first line with storage password.
         storage_file.readline()
         while True:
             encrypted_site = storage_file.readline().rstrip()
             encrypted_password = storage_file.readline().rstrip()
             if not encrypted_site or not encrypted_password:
                 return 'couldn\'t find password', ''
-            # decrypt each site name and check if it is the same as requested
+            # Decrypt each site name and check if it is the same as requested.
             if site == cipher.decrypt(encrypted_site):
                 decrypted_password = cipher.decrypt(encrypted_password)
                 return None, decrypted_password
@@ -179,15 +229,15 @@ def delete_password(ctx):
     storage_file = open(absolute_storage_path, 'r+')
     storage_data = storage_file.readlines()
     storage_file.close()
-    # skip the first line with hashed password
+    # Skip the first line with hashed password.
     passwords_data = storage_data[1:]
-    # group elements in chunks of size 2, so that data is logically grouped in pairs (site, password)
+    # Group elements in chunks of size 2, so that data is logically grouped in pairs (site, password).
     passwords_tuples = [passwords_data[i:i + 2] for i in range(0, len(passwords_data), 2)]
-    # remove the password which site's name is equal to the provided
+    # Remove the password which site's name is equal to the provided.
     new_passwords = [t for t in passwords_tuples if cipher.decrypt(t[0].rstrip()) != site]
     if len(new_passwords) != len(passwords_tuples):
         Path(absolute_storage_path).unlink()
-        # write updated passwords to the file
+        # Write updated passwords to the file.
         create_storage_file(absolute_storage_path, storage_password)
         with open(absolute_storage_path, 'a') as storage_file:
             for password_tuple in new_passwords:
