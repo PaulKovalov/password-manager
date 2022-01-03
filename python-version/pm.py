@@ -85,6 +85,7 @@ COMMANDS = {INIT, ADD, READ, DELETE, HELP}
 # User's parameters representing named arguments. These are just keys
 # for some values which should be used when performing an operation.
 USER_PARAMETERS = {
+    '-m': STORAGE_PASSWORD,
     '-u': USERNAME,
     '-s': SITE_NAME,
     '-l': SITE_LOGIN
