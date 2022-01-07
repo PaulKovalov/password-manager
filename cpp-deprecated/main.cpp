@@ -111,14 +111,14 @@ int main(int argc, char* argv[]) {
                 string line;
                 fin >> line;  // skip first line with hashed password;
                 while (getline(fin, line)) {
-                    if (line == site) {
-                        // found site, read password
-                        getline(fin, line);
-                        cout << endl
-                             << aes.aes_decode(line, storage_password) << endl;
-                        fin.close();
-                        return 0;
-                    }
+                    // if (line == site) {
+                    //     // found site, read password
+                    //     getline(fin, line);
+                    //     cout << endl
+                            cout << aes.aes_decode(line, storage_password) << endl;
+                        // fin.close();
+                        // return 0;
+                    // }
                 }
                 fin.close();
                 cout << endl
