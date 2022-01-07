@@ -4,9 +4,9 @@ import getpass
 import os.path
 import pyperclip
 import copy
+import base64
 
 from pathlib import Path
-import base64
 from Crypto import Random
 from Crypto.Cipher import AES
 from hashlib import sha256, sha1
@@ -80,7 +80,8 @@ ADD = '-a'
 READ = '-r'
 DELETE = '-d'
 HELP = '-h'
-COMMANDS = {INIT, ADD, READ, DELETE, HELP}
+LIST = '-ls'
+COMMANDS = {INIT, ADD, READ, DELETE, HELP, LIST}
 
 # User's parameters representing named arguments. These are just keys
 # for some values which should be used when performing an operation.
@@ -226,6 +227,21 @@ def read_password(ctx):
                 return None, decrypted_password
 
 
+def list_passwords(ctx):
+    print('Stored secrets:')
+    username = ctx[USERNAME]
+    storage_password = ctx[STORAGE_PASSWORD]
+    cipher = AESCipher(storage_password)
+    absolute_storage_path = get_storage_path(username)
+    with open(absolute_storage_path, 'r') as storage_file:
+        # Read all and skip the first line with storage password.
+        lines = storage_file.readlines()[1:]
+        lines = [line.rstrip() for line in lines]
+        for secret in lines[::2]:
+            no_longer_secret = cipher.decrypt(secret)
+            print(no_longer_secret)
+
+
 def delete_password(ctx):
     username = ctx[USERNAME]
     storage_password = ctx[STORAGE_PASSWORD]
@@ -305,6 +321,12 @@ def main():
             # Copy decrypted password to the clipboard.
             pyperclip.copy(decrypted_password)
             print('copied to clipboard')
+    elif ctx[COMMAND] == LIST:
+        ctx = ensure_ctx(ctx, USERNAME, STORAGE_PASSWORD)
+        if not has_access(ctx):
+            print('access denied')
+            return
+        list_passwords(ctx)
     elif ctx[COMMAND] == DELETE:
         ctx = ensure_ctx(ctx, USERNAME, STORAGE_PASSWORD)
         if not has_access(ctx):
@@ -321,3 +343,7 @@ def main():
 # Runs main() only when module is being run directly
 if __name__ == '__main__':
     main()
+
+# TODO:
+# Storage file versions
+# Warn if added password is already there
