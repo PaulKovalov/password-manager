@@ -92,7 +92,9 @@ USER_PARAMETERS = {
 }
 
 # Optional system parameters which can be used when performing an operation.
-SYS_PARAMETERS = {'-ptc'}
+SYS_PARAMETERS = {
+    '-ptc': SYS_PRINT_TO_CONSOLE
+}
 
 
 # Parses all information supported with the call into the context dictionary.
@@ -100,8 +102,11 @@ def parse_ctx_from_command_line(args):
     context_dict = {}
     it = iter(args)
     for arg in it:
-        if arg in COMMANDS or arg in SYS_PARAMETERS:
+        if arg in COMMANDS:
             context_dict[COMMAND] = arg
+        elif arg in SYS_PARAMETERS:
+            # System parameters are either enabled or disabled.
+            context_dict[SYS_PARAMETERS[arg]] = True
         elif arg in USER_PARAMETERS:
             context_dict[USER_PARAMETERS[arg]] = next(it)
         else:
