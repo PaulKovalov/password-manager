@@ -10,6 +10,7 @@ from pathlib import Path
 from Crypto import Random
 from Crypto.Cipher import AES
 from hashlib import sha256, sha1
+from itertools import groupby
 
 
 # Provides static methods for generating cryptographic hashes of a string.
@@ -214,17 +215,17 @@ def read_password(ctx):
     cipher = AESCipher(storage_password)
     absolute_storage_path = get_storage_path(username)
     with open(absolute_storage_path, 'r') as storage_file:
-        # Skip the first line with storage password.
-        storage_file.readline()
-        while True:
-            encrypted_site = storage_file.readline().rstrip()
-            encrypted_password = storage_file.readline().rstrip()
-            if not encrypted_site or not encrypted_password:
-                return 'couldn\'t find password', ''
+        # Read all and skip the first line with storage password.
+        lines = storage_file.readlines()[1:]
+        secrets = zip(lines[::2], lines[1::2])
+        for secret in secrets:
+            encrypted_site = secret[0]
+            encrypted_password = secret[1]
             # Decrypt each site name and check if it is the same as requested.
             if site == cipher.decrypt(encrypted_site):
                 decrypted_password = cipher.decrypt(encrypted_password)
                 return None, decrypted_password
+        return 'couldn\'t find password', ''
 
 
 def list_passwords(ctx):
