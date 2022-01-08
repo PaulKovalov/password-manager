@@ -304,6 +304,8 @@ def main():
             return
         add_password(ctx)
     elif ctx[COMMAND] == READ:
+        if SYS_PRINT_TO_CONSOLE in ctx:
+            print('Warning: printing secret to console')
         ctx = ensure_ctx(ctx, USERNAME, STORAGE_PASSWORD, SITE_NAME)
         if not has_access(ctx):
             print('access denied')
