@@ -10,7 +10,6 @@ from pathlib import Path
 from Crypto import Random
 from Crypto.Cipher import AES
 from hashlib import sha256, sha1
-from itertools import groupby
 
 
 # Provides static methods for generating cryptographic hashes of a string.
@@ -203,13 +202,12 @@ def add_password(ctx):
             # Both site name and site password are encrypted.
             storage_file.write(append_newline(cipher.encrypt(site)))
             storage_file.write(append_newline(cipher.encrypt(site_password)))
-            storage_file.close()
             print('done')
     else:
         print('passwords don\'t match')
 
 
-def get_storage_file_content(ctx):
+def read_storage_file_content(ctx):
     username = ctx[USERNAME]
     absolute_storage_path = get_storage_path(username)
     with open(absolute_storage_path, 'r') as storage_file:
@@ -220,7 +218,7 @@ def get_storage_file_content(ctx):
 
 
 def read_password(ctx):
-    lines = get_storage_file_content(ctx)
+    lines = read_storage_file_content(ctx)
     site = ctx[SITE_NAME]
     storage_password = ctx[STORAGE_PASSWORD]
     cipher = AESCipher(storage_password)
@@ -236,7 +234,7 @@ def read_password(ctx):
 
 
 def list_passwords(ctx):
-    lines = get_storage_file_content(ctx)
+    lines = read_storage_file_content(ctx)
     storage_password = ctx[STORAGE_PASSWORD]
     cipher = AESCipher(storage_password)
     print('Stored secrets:')
@@ -246,28 +244,24 @@ def list_passwords(ctx):
 
 
 def delete_password(ctx):
-    username = ctx[USERNAME]
-    storage_password = ctx[STORAGE_PASSWORD]
-    site = ctx[SITE_NAME]
-    cipher = AESCipher(storage_password)
-    absolute_storage_path = get_storage_path(username)
-    storage_file = open(absolute_storage_path, 'r+')
-    storage_data = storage_file.readlines()
-    storage_file.close()
-    # Skip the first line with hashed password.
-    passwords_data = storage_data[1:]
+    lines = read_storage_file_content(ctx)
     # Group elements in chunks of size 2, so that data is logically grouped in pairs (site, password).
-    passwords_tuples = [passwords_data[i:i + 2] for i in range(0, len(passwords_data), 2)]
+    secrets = list(zip(lines[::2], lines[1::2]))
     # Remove the password which site's name is equal to the provided.
-    new_passwords = [t for t in passwords_tuples if cipher.decrypt(t[0].rstrip()) != site]
-    if len(new_passwords) != len(passwords_tuples):
+    site = ctx[SITE_NAME]
+    storage_password = ctx[STORAGE_PASSWORD]
+    cipher = AESCipher(storage_password)
+    new_secrets = [s for s in secrets if cipher.decrypt(s[0]) != site]
+    if len(new_secrets) != len(secrets):
+        username = ctx[USERNAME]
+        absolute_storage_path = get_storage_path(username)
         Path(absolute_storage_path).unlink()
         # Write updated passwords to the file.
         create_storage_file(absolute_storage_path, storage_password)
         with open(absolute_storage_path, 'a') as storage_file:
-            for password_tuple in new_passwords:
-                storage_file.write(password_tuple[0])
-                storage_file.write(password_tuple[1])
+            for secret in new_secrets:
+                storage_file.write(append_newline(secret[0]))
+                storage_file.write(append_newline(secret[1]))
         print('password deleted')
     else:
         print('could not find password for the specified site')
