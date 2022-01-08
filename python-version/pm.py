@@ -203,44 +203,46 @@ def add_password(ctx):
             # Both site name and site password are encrypted.
             storage_file.write(append_newline(cipher.encrypt(site)))
             storage_file.write(append_newline(cipher.encrypt(site_password)))
+            storage_file.close()
             print('done')
     else:
         print('passwords don\'t match')
 
 
-def read_password(ctx):
+def get_storage_file_content(ctx):
     username = ctx[USERNAME]
-    storage_password = ctx[STORAGE_PASSWORD]
-    site = ctx[SITE_NAME]
-    cipher = AESCipher(storage_password)
-    absolute_storage_path = get_storage_path(username)
-    with open(absolute_storage_path, 'r') as storage_file:
-        # Read all and skip the first line with storage password.
-        lines = storage_file.readlines()[1:]
-        secrets = zip(lines[::2], lines[1::2])
-        for secret in secrets:
-            encrypted_site = secret[0]
-            encrypted_password = secret[1]
-            # Decrypt each site name and check if it is the same as requested.
-            if site == cipher.decrypt(encrypted_site):
-                decrypted_password = cipher.decrypt(encrypted_password)
-                return None, decrypted_password
-        return 'couldn\'t find password', ''
-
-
-def list_passwords(ctx):
-    print('Stored secrets:')
-    username = ctx[USERNAME]
-    storage_password = ctx[STORAGE_PASSWORD]
-    cipher = AESCipher(storage_password)
     absolute_storage_path = get_storage_path(username)
     with open(absolute_storage_path, 'r') as storage_file:
         # Read all and skip the first line with storage password.
         lines = storage_file.readlines()[1:]
         lines = [line.rstrip() for line in lines]
-        for secret in lines[::2]:
-            no_longer_secret = cipher.decrypt(secret)
-            print(no_longer_secret)
+        return lines
+
+
+def read_password(ctx):
+    lines = get_storage_file_content(ctx)
+    site = ctx[SITE_NAME]
+    storage_password = ctx[STORAGE_PASSWORD]
+    cipher = AESCipher(storage_password)
+    secrets = zip(lines[::2], lines[1::2])
+    for secret in secrets:
+        encrypted_site = secret[0]
+        encrypted_password = secret[1]
+        # Decrypt each site name and check if it is the same as requested.
+        if site == cipher.decrypt(encrypted_site):
+            decrypted_password = cipher.decrypt(encrypted_password)
+            return None, decrypted_password
+    return 'couldn\'t find password', ''
+
+
+def list_passwords(ctx):
+    lines = get_storage_file_content(ctx)
+    storage_password = ctx[STORAGE_PASSWORD]
+    cipher = AESCipher(storage_password)
+    print('Stored secrets:')
+    for secret in lines[::2]:
+        no_longer_secret = cipher.decrypt(secret)
+        print(no_longer_secret)
 
 
 def delete_password(ctx):
@@ -282,14 +284,15 @@ def print_help():
     serving as the encryption key.
 
     "python3 pm.py -i"                       - initialize password storage for the user defined in env variable $USER
-    "python3 pm.py -a <optional: site name>" - append password for the site name to the existing
+    "python3 pm.py -a [-s site name]"        - append password for the site name to the existing
                                                storage of the current user. If site name is not
-                                               passed as a command line argument, you will be
+                                               passed as a command line argument with "-s" flag, you will be
                                                prompted to enter it
-    "python3 pm.py -r <optional: site name>" - read password for the site, and write it to the clipboard. 
-                      <optional: -ptc>         If flag "ptc" is set, prints password to the stdout!
-    "python3 pm.py -d <optional: site name>  - delete password for the site from storage. 
+    "python3 pm.py -r [-ptc][-s site name]"  - read password for the site, and write it to the clipboard. 
+                                               If flag "ptc" is set, prints password to the stdout!
+    "python3 pm.py -d [-s site name]"        - delete password for the site from storage. 
                                                This is irreversible operation
+    "python3 pm.py -ls"                      - List secrets' names stored in the default storage 
     "python3 pm.py -h"                       - print this help""")
 
 
