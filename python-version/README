@@ -5,19 +5,20 @@ Tested on linux (ubuntu 20.10). Will not work on windows
 + |__| |  |  /__\  | \ |  /__\  | _  |-  |_/  +
 + |    |  | /    \ |  \| /    \ |__| |__ | \  +
 +++++++++++++++++++++++++++++++++++++++++++++++
-pmanager is a command line tool for securely storing and accessing passwords.
+pmanager is a command line tool for securely storing and accessing passwords. 
 pmanager keeps all passwords and their context encrypted using symmetrical encryption with master password
 serving as the encryption key.
 
 "python3 pm.py -i"                       - initialize password storage for the user defined in env variable $USER
-"python3 pm.py -a <optional: site name>" - append password for the site name to the existing
-                                           storage of the current user. If site name is not
-                                           passed as a command line argument, you will be
-                                           prompted to enter it
-"python3 pm.py -r <optional: site name>" - read password for the site, and write it to the clipboard.
-                  <optional: -ptc>         If flag "ptc" is set, prints password to the stdout!
-"python3 pm.py -d <optional: site name>  - delete password for the site from storage.
-                                           This is irreversible operation
+"python3 pm.py -a [-s site name]"        - append password for the site name to the existing
+                                            storage of the current user. If site name is not
+                                            passed as a command line argument with "-s" flag, you will be
+                                            prompted to enter it
+"python3 pm.py -r [-ptc][-s site name]"  - read password for the site, and write it to the clipboard. 
+                                            If flag "ptc" is set, prints password to the stdout!
+"python3 pm.py -d [-s site name]"        - delete password for the site from storage. 
+                                            This is irreversible operation
+"python3 pm.py -ls"                      - List secrets' names stored in the default storage 
 "python3 pm.py -h"                       - print this help
 
 Command to run tests for python version:
