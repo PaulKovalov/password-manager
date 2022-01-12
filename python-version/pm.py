@@ -192,14 +192,17 @@ def add_password(ctx):
     username = ctx[USERNAME]
     storage_password = ctx[STORAGE_PASSWORD]
     site = ctx[SITE_NAME]
-    # Here getting input from context is not possible as it must be double-checked.
-    # Because of this, regular input prompt is used.
     site_password, confirm_site_password = prompt_password()
     if site_password == confirm_site_password:
+        cipher = AESCipher(storage_password)
+        # Check if added secret already stored.
+        lines = read_storage_file_content(ctx)
+        for secret_name in lines[::2]:
+            if site == cipher.decrypt(secret_name):
+                print('Secret already exists')
+                return
         storage_path = get_storage_path(username)
         with open(storage_path, 'a+') as storage_file:
-            cipher = AESCipher(storage_password)
-            # Both site name and site password are encrypted.
             storage_file.write(append_newline(cipher.encrypt(site)))
             storage_file.write(append_newline(cipher.encrypt(site_password)))
             print('done')
@@ -346,4 +349,3 @@ if __name__ == '__main__':
 
 # TODO:
 # Storage file versions
-# Warn if added password is already there

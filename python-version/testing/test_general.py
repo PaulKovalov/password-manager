@@ -17,7 +17,6 @@ def run_before_and_after_tests():
     shutil.rmtree(os.path.join('/home', DEFAULT_USER, '.pmp'))
 
 
-# ID: 1
 def test_create_default_storage():
     test_context = {
         USERNAME: DEFAULT_USER,
@@ -33,7 +32,6 @@ def test_create_default_storage():
         assert written_password == 'cc9f816a42431cf852cdc7a3fad42a6f65ffce24'
 
 
-# ID: 2
 def test_create_storage_for_user():
     test_context = {
         USERNAME: TEST_USER_1,
@@ -49,7 +47,6 @@ def test_create_storage_for_user():
         assert written_password == 'cc9f816a42431cf852cdc7a3fad42a6f65ffce24'
 
 
-# ID: 3
 def test_add_password_to_empty_storage(mocker):
     init_context = {
         USERNAME: TEST_USER_1,
@@ -72,7 +69,6 @@ def test_add_password_to_empty_storage(mocker):
         assert len(file.readlines()) == 3
 
 
-# ID: 4
 def test_add_password_to_non_empty_storage(mocker):
     init_context = {
         USERNAME: DEFAULT_USER,
@@ -105,7 +101,6 @@ def test_add_password_to_non_empty_storage(mocker):
         assert len(file.readlines()) == 5
 
 
-# ID: 5
 def test_read_password(mocker):
     init_context = {
         USERNAME: DEFAULT_USER,
@@ -127,7 +122,6 @@ def test_read_password(mocker):
     assert got_password == want_password
 
 
-# ID: 6
 def test_delete_password(mocker):
     init_context = {
         USERNAME: DEFAULT_USER,
@@ -160,4 +154,42 @@ def test_delete_password(mocker):
     with open(expected_file_path) as file:
         # 1 storage password and 1 password consisting of 2 lines.
         assert len(file.readlines()) == 3
+
+
+def test_add_existing_password(mocker):
+    init_context = {
+        USERNAME: DEFAULT_USER,
+        STORAGE_PASSWORD: 'Qwerty123'
+    }
+    init_storage(init_context)
+    test_context = {
+        USERNAME: DEFAULT_USER,
+        STORAGE_PASSWORD: 'Qwerty123',
+        SITE_NAME: 'Vasya-site'
+    }
+    # Add the password for the first time
+    test_password = 'Qwerty229'
+    # Mock input to return test password.
+    mocker.patch('pm.prompt_password', return_value=(test_password, test_password))
+    add_password(test_context)
+
+    expected_file_path = os.path.join('/home', DEFAULT_USER, '.pmp',
+                                      '81d1d68e2230674aa504d7fa2efaa8b893a128d3cc477385f26fa106380fb004.pst')
+    content_before = []
+    # Expect 3 lines to be written to the file
+    with open(expected_file_path) as file:
+        # 1 storage password and 1 password, each 2 lines.
+        content_before = file.readlines()
+        assert len(content_before) == 3
+    
+    # Try to add password again, and expect to get same 3 lines
+    add_password(test_context)
+    content_after = []
+    with open(expected_file_path) as file:
+        # 1 storage password and 1 password, each 2 lines.
+        content_after = file.readlines()
+        assert len(content_after) == 3
+    # Ensure content of the storage has not changed.
+    for b, a in zip(content_before, content_after):
+        assert b == a
 

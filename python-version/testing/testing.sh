@@ -6,7 +6,6 @@ set -e
 python3 -m pytest -v
 
 # Integration testing
-# ID: 7
 test_password="Qwerty123"
 expected_storage_path="/home/$USER/.pmp/81d1d68e2230674aa504d7fa2efaa8b893a128d3cc477385f26fa106380fb004.pst"
 echo $'-i\n'$test_password | python3 pm.py
