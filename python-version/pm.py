@@ -9,7 +9,7 @@ import base64
 from pathlib import Path
 from Crypto import Random
 from Crypto.Cipher import AES
-from hashlib import sha256, sha1
+from hashlib import sha256, sha512
 
 
 # Provides static methods for generating cryptographic hashes of a string.
@@ -23,8 +23,8 @@ class Hasher:
 
     # Returns SHA-1 hash in a HEX format.
     @staticmethod
-    def sha1(_str) -> str:
-        return sha1(_str.encode(Hasher.__default_encoding)).hexdigest()
+    def sha512(_str) -> str:
+        return sha512(_str.encode(Hasher.__default_encoding)).hexdigest()
 
     # Returns SHA-256 hash in a format of bytes.
     @staticmethod
@@ -137,7 +137,6 @@ def get_storage_path(username: str) -> str:
 
 
 # Checks if there is a storage for the user with given password.
-# Checks if user can access this storage.
 def has_access(ctx):
     username = ctx[USERNAME]
     storage_password = ctx[STORAGE_PASSWORD]
@@ -145,7 +144,7 @@ def has_access(ctx):
     if Path(storage_path).exists() and Path(storage_path).is_file():
         with open(storage_path, 'r') as storage:
             written_storage_password = storage.readline().rstrip()
-            return written_storage_password == Hasher.sha1(storage_password)
+            return written_storage_password == Hasher.sha512(storage_password)
     else:
         print('no storage file found, aborting')
         return False
@@ -163,7 +162,7 @@ def create_storage_file(absolute_storage_path: str, storage_password: str):
         Path(root_dir).mkdir()
     Path(absolute_storage_path).touch()
     with open(absolute_storage_path, 'a') as storage_file:
-        storage_file.write(append_newline(Hasher.sha1(storage_password)))
+        storage_file.write(append_newline(Hasher.sha512(storage_password)))
         print('done')
 
 
@@ -308,7 +307,7 @@ def main():
         add_password(ctx)
     elif ctx[COMMAND] == READ:
         if SYS_PRINT_TO_CONSOLE in ctx:
-            print('Warning: printing secret to console')
+            print('Warning: printing secret to the console')
         ctx = ensure_ctx(ctx, USERNAME, STORAGE_PASSWORD, SITE_NAME)
         if not has_access(ctx):
             print('access denied')

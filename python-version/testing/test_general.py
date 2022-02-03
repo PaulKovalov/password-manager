@@ -29,7 +29,7 @@ def test_create_default_storage():
     assert file_exists, "Storage file was not created"
     with open(expected_file_path) as file:
         written_password = file.readline().rstrip()
-        assert written_password == 'cc9f816a42431cf852cdc7a3fad42a6f65ffce24'
+        assert written_password == '4f42378d53b50a1c73d9a57f1550540ea0c3c0d5ceaf671394f2d200d4f95eafdcd6ff816c08e4c4364dc3ccc8bcf5a29cb003f05ff3089df5c852dc30d8fd8c'
 
 
 def test_create_storage_for_user():
@@ -44,7 +44,7 @@ def test_create_storage_for_user():
     assert file_exists, "Storage file was not created"
     with open(expected_file_path) as file:
         written_password = file.readline().rstrip()
-        assert written_password == 'cc9f816a42431cf852cdc7a3fad42a6f65ffce24'
+        assert written_password == '4f42378d53b50a1c73d9a57f1550540ea0c3c0d5ceaf671394f2d200d4f95eafdcd6ff816c08e4c4364dc3ccc8bcf5a29cb003f05ff3089df5c852dc30d8fd8c'
 
 
 def test_add_password_to_empty_storage(mocker):

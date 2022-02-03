@@ -15,7 +15,7 @@ then
   # 1-255 exit code means failure.
   exit 1
 fi
-expected_file_content="cc9f816a42431cf852cdc7a3fad42a6f65ffce24"
+expected_file_content="4f42378d53b50a1c73d9a57f1550540ea0c3c0d5ceaf671394f2d200d4f95eafdcd6ff816c08e4c4364dc3ccc8bcf5a29cb003f05ff3089df5c852dc30d8fd8c"
 if [ $expected_file_content != $(cat $expected_storage_path) ]
 then
   echo "Expected $expected_file_content but got $(cat $expected_storage_path)"
