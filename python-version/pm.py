@@ -1,15 +1,15 @@
 #!/home/paul/.virtualenvs/python-version/bin/python
-import sys
+import base64
+import copy
 import getpass
 import os.path
-import pyperclip
-import copy
-import base64
-
+import sys
+from hashlib import sha256, sha512
 from pathlib import Path
+
+import pyperclip
 from Crypto import Random
 from Crypto.Cipher import AES
-from hashlib import sha256, sha512
 
 
 # Provides static methods for generating cryptographic hashes of a string.

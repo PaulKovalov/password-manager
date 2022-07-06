@@ -1,9 +1,11 @@
-import pytest
-import shutil
 import os
+import shutil
 from pathlib import Path
-from pm import init_storage, add_password, read_password, delete_password
+
+import pytest
+
 from pm import USERNAME, STORAGE_PASSWORD, SITE_NAME
+from pm import init_storage, add_password, read_password, delete_password
 
 DEFAULT_USER = 'Vasiliy'
 TEST_USER_1 = 'Vasya'
